@@ -7,9 +7,8 @@ type Model struct {
 }
 
 type Form struct {
-	ID   int
-	msg  string
-	seen bool
+	ID  int
+	msg string
 }
 
 func (m *Model) Show() ([]*Form, error) {

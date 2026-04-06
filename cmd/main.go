@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
+	"parser/application"
+	"parser/clients"
 	"parser/config"
 )
 
@@ -29,4 +31,14 @@ func connect2db() *sql.DB {
 
 func main() {
 	db := connect2db()
+	tg, err := clients.Init()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	app := &application.App{
+		DB: db,
+		Tg: tg,
+	}
+
 }
