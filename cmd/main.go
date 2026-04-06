@@ -7,6 +7,7 @@ import (
 	"parser/application"
 	"parser/clients"
 	"parser/config"
+	"parser/database"
 )
 
 func connect2db() *sql.DB {
@@ -37,8 +38,8 @@ func main() {
 	}
 
 	app := &application.App{
-		DB: db,
-		Tg: tg,
+		Model: &database.Model{DB: db},
+		Tg:    tg,
 	}
 
 }

@@ -1,12 +1,12 @@
 package application
 
 import (
-	"database/sql"
+	"parser/database"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 type App struct {
-	DB *sql.DB
-	tg *tgbotapi.BotAPI
+	Model *database.Model
+	Tg    *tgbotapi.BotAPI
 }
