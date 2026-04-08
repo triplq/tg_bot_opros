@@ -36,17 +36,22 @@ func main() {
 	db := connect2db()
 	defer db.Close()
 
-	_, err := clients.Init()
+	tg, err := clients.Init()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	url := "https://t.me/s/oprosrussiaa"
+	var url = []string{"https://t.me/s/oprosrussiaa", "https://t.me/s/oprosyvsem", "https://t.me/s/servizoria_rf"}
 
 	app := &application.App{
 		Model: &database.Model{DB: db},
 		Tg:    tg,
 	}
 
-	parsing.Parse(url, app)
+	for _, u := range url {
+		err = parsing.Parse(u, app)
+		if err != nil {
+			log.Fatal(err)
+		}
+	}
 }

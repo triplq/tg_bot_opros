@@ -38,6 +38,7 @@ func Parse(url string, app *application.App) error {
 	doc.Find(".tgme_widget_message").EachWithBreak(func(i int, s *goquery.Selection) bool {
 		post_hash, exist := s.Attr("data-post")
 		if !exist || last_hash == post_hash { //тут проверка на хэш, но сам он не хэш, мб докрутить потом
+			fmt.Println("BARAN TUT")
 			return false
 		}
 
