@@ -17,9 +17,36 @@ type Form struct {
 	Hash      string
 }
 
+func (m *Model) PasteForms(forms []*Form) error {
+	tx, err := m.DB.Begin()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Prepare(`insert into list (msg, posted_at, hash, channel) values ($1, $2, $3, $4)`)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+
+	for _, f := range forms {
+		_, err := stmt.Exec(f.Msg, f.Posted_at, f.Hash, f.Channel)
+		if err != nil {
+			tx.Rollback()
+			return err
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (m *Model) LastHash(channel_name string) (string, error) {
 	stmt := `select hash from list
-	where channel=?
+	where channel=$1
 	order by posted_at desc
 	limit 1`
 
