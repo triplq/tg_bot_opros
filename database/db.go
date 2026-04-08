@@ -1,14 +1,37 @@
 package database
 
-import "database/sql"
+import (
+	"database/sql"
+	"time"
+)
 
 type Model struct {
 	DB *sql.DB
 }
 
 type Form struct {
-	ID  int
-	msg string
+	ID        int
+	Msg       string
+	Posted_at time.Time
+	Channel   string
+	Hash      string
+}
+
+func (m *Model) LastHash(channel_name string) (string, error) {
+	stmt := `select hash from list
+	where channel=?
+	order by posted_at desc
+	limit 1`
+
+	var hash string
+
+	res := m.DB.QueryRow(stmt, channel_name)
+	err := res.Scan(&hash)
+	if err != nil {
+		return "", err
+	}
+
+	return hash, nil
 }
 
 func (m *Model) Show() ([]*Form, error) {
@@ -36,7 +59,7 @@ func (m *Model) setSeen() error {
 }
 
 func (m *Model) list() ([]*Form, error) {
-	stmt := `select ID, msg from list where seen=false`
+	stmt := `select msg from list where seen=false`
 	forms := []*Form{}
 
 	rows, err := m.DB.Query(stmt)
@@ -47,7 +70,7 @@ func (m *Model) list() ([]*Form, error) {
 
 	for rows.Next() {
 		f := &Form{}
-		err := rows.Scan(&f.ID, &f.msg)
+		err := rows.Scan(&f.Msg)
 		if err != nil {
 			return nil, err
 		}
