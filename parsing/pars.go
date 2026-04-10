@@ -24,7 +24,7 @@ func Parse(url string, app *application.App) error {
 	urlParts := strings.Split(url, "/")
 	channel := urlParts[len(urlParts)-1]
 
-	lastHash, err := app.Model.LastHash(channel)
+	lastPD, err := app.Model.LastHash(channel)
 	if err != nil {
 		return err
 	}
@@ -37,46 +37,44 @@ func Parse(url string, app *application.App) error {
 	forms := []*database.Form{}
 
 	for true { //убрать потом этот вонючий цикл и сделать maxAttmpts
-		selector := fmt.Sprintf(`[data-post="%s"]`, lastHash)
+		selector := fmt.Sprintf(`[data-post="%s"]`, lastPD)
 		found := doc.Find(selector)
 		if found.Length() == 0 {
-			hashSplit := strings.Split(lastHash, "/")
-			hashInt, err := strconv.Atoi(hashSplit[1])
+			splitPD := strings.Split(lastPD, "/")
+			intPD, err := strconv.Atoi(strings.TrimSpace(splitPD[1]))
 			if err != nil {
 				return err
 			}
-			hashInt++
-			lastHash = fmt.Sprintf("%s/%d", hashSplit[0], hashInt)
+			intPD++
+			lastPD = fmt.Sprintf("%s/%d", splitPD[0], intPD)
 		} else {
 			break
 		}
 	}
 
-	doc.Find(".tgme_widget_message").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		postHash, exist := s.Attr("data-post")
-		fmt.Println(postHash, lastHash)
-		if !exist || lastHash == postHash { //тут проверка на хэш, но сам он не хэш, мб докрутить потом
-			return false
+	posts := doc.Find(".tgme_widget_message")
+	for i := posts.Length() - 1; i >= 0; i-- {
+		s := posts.Eq(i)
+		postPD, exist := s.Attr("data-post")
+		if !exist || lastPD == postPD {
+			break
 		}
 
 		form := &database.Form{}
 		form.Channel = channel
-		form.Hash = postHash
+		form.PostData = postPD
 		form.Msg = strings.TrimSpace(s.Find(".tgme_widget_message_text").Text())
 		timeStr, exist := s.Find(".tgme_widget_message_date time").Attr("datetime")
 		if !exist {
-			fmt.Fprint(os.Stderr, "Something wrong with time_exist", postHash)
-			return true
+			fmt.Fprint(os.Stderr, "Something wrong with time_exist", postPD)
 		}
 		form.Posted_at, err = time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-			fmt.Fprint(os.Stderr, "Something wrong with time_parse", postHash, timeStr)
-			return true
+			fmt.Fprint(os.Stderr, "Something wrong with time_parse", postPD, timeStr)
 		}
 
 		forms = append(forms, form)
-		return true
-	})
+	}
 
 	err = app.Model.PasteForms(forms)
 	if err != nil {

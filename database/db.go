@@ -9,31 +9,12 @@ type Model struct {
 	DB *sql.DB
 }
 
-// type hash struct {
-// 	name string
-// 	numb uint64
-// }
-
-// func NewHash(hsh string) *hash {
-// 	hshSpilt := strings.Split(hsh, "/")
-// 	n, _ := strconv.ParseUint(hshSpilt[1], 10, 64)
-
-// 	return &hash{
-// 		name: hshSpilt[0],
-// 		numb: n,
-// 	}
-// }
-
-// func (h *hash) Incr() {
-// 	h.numb++
-// }
-
 type Form struct {
 	ID        int
 	Msg       string
 	Posted_at time.Time
 	Channel   string
-	Hash      string
+	PostData  string
 }
 
 func (m *Model) PasteForms(forms []*Form) error {
@@ -41,14 +22,14 @@ func (m *Model) PasteForms(forms []*Form) error {
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare(`insert into list (msg, posted_at, hash, channel) values ($1, $2, $3, $4)`)
+	stmt, err := tx.Prepare(`insert into list (msg, posted_at, post_data, channel) values ($1, $2, $3, $4)`)
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
 	for _, f := range forms {
-		_, err := stmt.Exec(f.Msg, f.Posted_at, f.Hash, f.Channel)
+		_, err := stmt.Exec(f.Msg, f.Posted_at, f.PostData, f.Channel)
 		if err != nil {
 			tx.Rollback()
 			return err
@@ -64,7 +45,7 @@ func (m *Model) PasteForms(forms []*Form) error {
 }
 
 func (m *Model) LastHash(channel_name string) (string, error) {
-	stmt := `select hash from list
+	stmt := `select post_data from list
 	where channel=$1
 	order by posted_at desc
 	limit 1`
