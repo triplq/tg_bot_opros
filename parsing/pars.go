@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"parser/database"
+	"strconv"
 	"strings"
 	"time"
 
@@ -20,10 +21,10 @@ func Parse(url string, app *application.App) error {
 	}
 	defer res.Body.Close()
 
-	url_parts := strings.Split(url, "/")
-	channel := url_parts[len(url_parts)-1]
+	urlParts := strings.Split(url, "/")
+	channel := urlParts[len(urlParts)-1]
 
-	last_hash, err := app.Model.LastHash(channel)
+	lastHash, err := app.Model.LastHash(channel)
 	if err != nil {
 		return err
 	}
@@ -35,25 +36,41 @@ func Parse(url string, app *application.App) error {
 
 	forms := []*database.Form{}
 
+	for true { //убрать потом этот вонючий цикл и сделать maxAttmpts
+		selector := fmt.Sprintf(`[data-post="%s"]`, lastHash)
+		found := doc.Find(selector)
+		if found.Length() == 0 {
+			hashSplit := strings.Split(lastHash, "/")
+			hashInt, err := strconv.Atoi(hashSplit[1])
+			if err != nil {
+				return err
+			}
+			hashInt++
+			lastHash = fmt.Sprintf("%s/%d", hashSplit[0], hashInt)
+		} else {
+			break
+		}
+	}
+
 	doc.Find(".tgme_widget_message").EachWithBreak(func(i int, s *goquery.Selection) bool {
-		post_hash, exist := s.Attr("data-post")
-		if !exist || last_hash == post_hash { //тут проверка на хэш, но сам он не хэш, мб докрутить потом
-			fmt.Println("BARAN TUT")
+		postHash, exist := s.Attr("data-post")
+		fmt.Println(postHash, lastHash)
+		if !exist || lastHash == postHash { //тут проверка на хэш, но сам он не хэш, мб докрутить потом
 			return false
 		}
 
 		form := &database.Form{}
 		form.Channel = channel
-		form.Hash = post_hash
+		form.Hash = postHash
 		form.Msg = strings.TrimSpace(s.Find(".tgme_widget_message_text").Text())
-		time_str, exist := s.Find(".tgme_widget_message_date time").Attr("datetime")
+		timeStr, exist := s.Find(".tgme_widget_message_date time").Attr("datetime")
 		if !exist {
-			fmt.Fprint(os.Stderr, "Something wrong with time_exist", post_hash)
+			fmt.Fprint(os.Stderr, "Something wrong with time_exist", postHash)
 			return true
 		}
-		form.Posted_at, err = time.Parse(time.RFC3339, time_str)
+		form.Posted_at, err = time.Parse(time.RFC3339, timeStr)
 		if err != nil {
-			fmt.Fprint(os.Stderr, "Something wrong with time_parse", post_hash, time_str)
+			fmt.Fprint(os.Stderr, "Something wrong with time_parse", postHash, timeStr)
 			return true
 		}
 

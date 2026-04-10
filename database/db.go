@@ -9,6 +9,25 @@ type Model struct {
 	DB *sql.DB
 }
 
+// type hash struct {
+// 	name string
+// 	numb uint64
+// }
+
+// func NewHash(hsh string) *hash {
+// 	hshSpilt := strings.Split(hsh, "/")
+// 	n, _ := strconv.ParseUint(hshSpilt[1], 10, 64)
+
+// 	return &hash{
+// 		name: hshSpilt[0],
+// 		numb: n,
+// 	}
+// }
+
+// func (h *hash) Incr() {
+// 	h.numb++
+// }
+
 type Form struct {
 	ID        int
 	Msg       string
