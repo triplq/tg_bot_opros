@@ -49,7 +49,11 @@ func main() {
 	}
 
 	for _, u := range url {
-		err = parsing.Parse(u, app)
+		forms, err := parsing.Parse(u, app)
+		if err != nil {
+			log.Fatal(err)
+		}
+		err = app.Model.PasteForms(forms)
 		if err != nil {
 			log.Fatal(err)
 		}
